@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -28,93 +29,94 @@
   input { font-family: inherit; }
   button { font-family: inherit; }
 
-  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
-  @keyframes alertBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-  @keyframes alertSlideIn { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes bellRing { 0%,100%{transform:rotate(0)} 15%{transform:rotate(14deg)} 30%{transform:rotate(-14deg)} 45%{transform:rotate(10deg)} 60%{transform:rotate(-10deg)} 75%{transform:rotate(4deg)} }
-  @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(30px); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
+@keyframes alertBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes alertSlideIn { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bellRing { 0%,100%{transform:rotate(0)} 15%{transform:rotate(14deg)} 30%{transform:rotate(-14deg)} 45%{transform:rotate(10deg)} 60%{transform:rotate(-10deg)} 75%{transform:rotate(4deg)} }
+@keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(30px); } }
 
-  .ambient { position: fixed; top:0; left:0; right:0; bottom:0; pointer-events: none; z-index: 0; }
-  .ambient-a { position:absolute; top:-20%; right:-10%; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,rgba(232,168,56,0.06) 0%,transparent 70%); animation: glow 8s ease-in-out infinite; }
-  .ambient-b { position:absolute; bottom:-15%; left:-5%; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,rgba(93,184,232,0.05) 0%,transparent 70%); animation: glow 10s ease-in-out infinite 2s; }
+.ambient { position: fixed; top:0; left:0; right:0; bottom:0; pointer-events: none; z-index: 0; }
+.ambient-a { position:absolute; top:-20%; right:-10%; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,rgba(232,168,56,0.06) 0%,transparent 70%); animation: glow 8s ease-in-out infinite; }
+.ambient-b { position:absolute; bottom:-15%; left:-5%; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,rgba(93,184,232,0.05) 0%,transparent 70%); animation: glow 10s ease-in-out infinite 2s; }
 
-  .main { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; padding: 0 20px 140px; }
-  .header { padding: 32px 0 24px; text-align: center; }
-  .header-sub { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: #666; font-family: 'Space Mono', monospace; margin-bottom: 8px; }
-  .header h1 { font-size: 32px; font-weight: 700; letter-spacing: -1px; background: linear-gradient(135deg, #E8E6E1 0%, #AAA 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .header-stats { font-size: 13px; color: #555; margin-top: 8px; }
+.main { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; padding: 0 20px 140px; }
+.header { padding: 32px 0 24px; text-align: center; }
+.header-sub { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: #666; font-family: ‘Space Mono’, monospace; margin-bottom: 8px; }
+.header h1 { font-size: 32px; font-weight: 700; letter-spacing: -1px; background: linear-gradient(135deg, #E8E6E1 0%, #AAA 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.header-stats { font-size: 13px; color: #555; margin-top: 8px; }
 
-  .nav { display: flex; gap: 6px; margin-bottom: 24px; justify-content: center; flex-wrap: wrap; }
-  .nav-btn { padding: 8px 20px; border-radius: 20px; border: none; background: transparent; color: #666; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-  .nav-btn.active { background: rgba(255,255,255,0.1); color: #E8E6E1; }
-  .nav-reset { padding: 8px 14px; border-radius: 20px; border: none; background: transparent; color: #444; font-size: 13px; cursor: pointer; }
+.nav { display: flex; gap: 6px; margin-bottom: 24px; justify-content: center; flex-wrap: wrap; }
+.nav-btn { padding: 8px 20px; border-radius: 20px; border: none; background: transparent; color: #666; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.nav-btn.active { background: rgba(255,255,255,0.1); color: #E8E6E1; }
+.nav-reset { padding: 8px 14px; border-radius: 20px; border: none; background: transparent; color: #444; font-size: 13px; cursor: pointer; }
 
-  .pills { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding: 4px 0; justify-content: center; flex-wrap: wrap; }
-  .pill { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); color: #888; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.25s ease; white-space: nowrap; }
-  .pill .icon { font-size: 18px; }
-  .pill .badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center; background: rgba(255,255,255,0.08); color: #888; }
+.pills { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding: 4px 0; justify-content: center; flex-wrap: wrap; }
+.pill { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); color: #888; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.25s ease; white-space: nowrap; }
+.pill .icon { font-size: 18px; }
+.pill .badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center; background: rgba(255,255,255,0.08); color: #888; }
 
-  .section-label { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; font-family: 'Space Mono', monospace; }
-  .section { margin-bottom: 28px; }
-  .card-list { display: flex; flex-direction: column; gap: 8px; }
+.section-label { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; font-family: ‘Space Mono’, monospace; }
+.section { margin-bottom: 28px; }
+.card-list { display: flex; flex-direction: column; gap: 8px; }
 
-  .item-card { border-radius: 14px; padding: 14px 18px; display: flex; align-items: flex-start; gap: 14px; transition: all 0.3s ease; position: relative; }
-  .item-card .check { width: 24px; height: 24px; min-width: 24px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all 0.2s ease; color: #fff; font-size: 13px; border: none; }
-  .item-card .text { font-size: 15px; line-height: 1.4; margin-bottom: 6px; word-break: break-word; }
-  .item-card .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .item-card .date { font-size: 12px; font-weight: 500; }
-  .item-card .time { font-size: 12px; font-weight: 600; }
-  .item-card .overdue-tag { font-size: 11px; color: #E85D75; font-weight: 600; letter-spacing: 0.5px; }
-  .item-card .delete { background: none; border: none; color: #555; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 6px; transition: all 0.2s; }
-  .item-card .delete:hover { color: #E85D75; background: rgba(232,93,117,0.1); }
+.item-card { border-radius: 14px; padding: 14px 18px; display: flex; align-items: flex-start; gap: 14px; transition: all 0.3s ease; position: relative; }
+.item-card .check { width: 24px; height: 24px; min-width: 24px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all 0.2s ease; color: #fff; font-size: 13px; border: none; }
+.item-card .text { font-size: 15px; line-height: 1.4; margin-bottom: 6px; word-break: break-word; }
+.item-card .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.item-card .date { font-size: 12px; font-weight: 500; }
+.item-card .time { font-size: 12px; font-weight: 600; }
+.item-card .overdue-tag { font-size: 11px; color: #E85D75; font-weight: 600; letter-spacing: 0.5px; }
+.item-card .delete { background: none; border: none; color: #555; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 6px; transition: all 0.2s; }
+.item-card .delete:hover { color: #E85D75; background: rgba(232,93,117,0.1); }
 
-  .shopping-card { border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; transition: all 0.4s ease; }
-  .shopping-card.bought { opacity: 0.4; transform: translateX(20px); }
-  .shopping-card .check { width: 28px; height: 28px; min-width: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; color: #fff; font-size: 14px; font-weight: 700; border: none; }
-  .shopping-card .name { flex: 1; font-size: 16px; font-weight: 500; }
-  .shopping-card .delete { background: none; border: none; color: #555; cursor: pointer; font-size: 18px; padding: 2px 8px; border-radius: 6px; transition: all 0.2s; }
-  .shopping-card .delete:hover { color: #E85D75; }
+.shopping-card { border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; transition: all 0.4s ease; }
+.shopping-card.bought { opacity: 0.4; transform: translateX(20px); }
+.shopping-card .check { width: 28px; height: 28px; min-width: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; color: #fff; font-size: 14px; font-weight: 700; border: none; }
+.shopping-card .name { flex: 1; font-size: 16px; font-weight: 500; }
+.shopping-card .delete { background: none; border: none; color: #555; cursor: pointer; font-size: 18px; padding: 2px 8px; border-radius: 6px; transition: all 0.2s; }
+.shopping-card .delete:hover { color: #E85D75; }
 
-  .empty { text-align: center; padding: 60px 20px; color: #555; }
-  .empty .big-icon { font-size: 52px; margin-bottom: 16px; }
-  .empty .title { font-size: 18px; font-weight: 600; color: #777; margin-bottom: 10px; }
-  .empty .desc { font-size: 14px; line-height: 1.6; max-width: 340px; margin: 0 auto; }
+.empty { text-align: center; padding: 60px 20px; color: #555; }
+.empty .big-icon { font-size: 52px; margin-bottom: 16px; }
+.empty .title { font-size: 18px; font-weight: 600; color: #777; margin-bottom: 10px; }
+.empty .desc { font-size: 14px; line-height: 1.6; max-width: 340px; margin: 0 auto; }
 
-  .input-area { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, #0D0D0F 60%, transparent); padding: 30px 20px 28px; z-index: 100; padding-bottom: max(28px, env(safe-area-inset-bottom)); }
-  .input-row { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .input-inner { display: flex; align-items: center; gap: 12px; width: 100%; }
-  .text-input { flex: 1; height: 50px; border-radius: 16px; border: 2px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: #E8E6E1; font-size: 15px; padding: 0 18px; outline: none; transition: border-color 0.2s; }
-  .text-input:focus { border-color: rgba(255,255,255,0.2); }
-  .send-btn { width: 50px; height: 50px; border-radius: 14px; border: none; background: rgba(255,255,255,0.08); color: #888; font-size: 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-  .send-btn:hover { background: rgba(255,255,255,0.15); color: #E8E6E1; }
+.input-area { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, #0D0D0F 60%, transparent); padding: 30px 20px 28px; z-index: 100; padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+.input-row { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.input-inner { display: flex; align-items: center; gap: 12px; width: 100%; }
+.text-input { flex: 1; height: 50px; border-radius: 16px; border: 2px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: #E8E6E1; font-size: 15px; padding: 0 18px; outline: none; transition: border-color 0.2s; }
+.text-input:focus { border-color: rgba(255,255,255,0.2); }
+.send-btn { width: 50px; height: 50px; border-radius: 14px; border: none; background: rgba(255,255,255,0.08); color: #888; font-size: 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.send-btn:hover { background: rgba(255,255,255,0.15); color: #E8E6E1; }
 
-  .mic-btn { width: 72px; height: 72px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; position: relative; border: 3px solid rgba(255,255,255,0.15); background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-  .mic-btn.listening { border-color: #E85D75; background: radial-gradient(circle, #E85D75 0%, #BE3455 100%); box-shadow: 0 0 30px rgba(232,93,117,0.4), 0 0 60px rgba(232,93,117,0.15); animation: pulse 1.5s ease-in-out infinite; }
-  .mic-btn svg { pointer-events: none; }
-  .listening-label { font-size: 13px; color: #E85D75; font-weight: 600; animation: pulse 1.5s ease-in-out infinite; }
+.mic-btn { width: 72px; height: 72px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; position: relative; border: 3px solid rgba(255,255,255,0.15); background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.mic-btn.listening { border-color: #E85D75; background: radial-gradient(circle, #E85D75 0%, #BE3455 100%); box-shadow: 0 0 30px rgba(232,93,117,0.4), 0 0 60px rgba(232,93,117,0.15); animation: pulse 1.5s ease-in-out infinite; }
+.mic-btn svg { pointer-events: none; }
+.listening-label { font-size: 13px; color: #E85D75; font-weight: 600; animation: pulse 1.5s ease-in-out infinite; }
 
-  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 1000; animation: slideDown 0.3s ease; pointer-events: none; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 1000; animation: slideDown 0.3s ease; pointer-events: none; }
 
-  .alert-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 999; animation: alertSlideIn 0.4s ease; }
-  .alert-bg { background: linear-gradient(135deg, #E85D75 0%, #D4793A 100%); padding: 0 16px; animation: alertBlink 2s ease-in-out infinite; }
-  .alert-item { max-width: 600px; margin: 0 auto; padding: 14px 0; display: flex; align-items: center; gap: 12px; }
-  .alert-bell { font-size: 22px; animation: bellRing 1s ease-in-out infinite; }
-  .alert-label { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.5px; margin-bottom: 2px; }
-  .alert-text { font-size: 15px; color: rgba(255,255,255,0.95); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .alert-dismiss { background: rgba(255,255,255,0.2); border: none; color: #fff; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
-  .alert-dismiss:hover { background: rgba(255,255,255,0.35); }
+.alert-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 999; animation: alertSlideIn 0.4s ease; }
+.alert-bg { background: linear-gradient(135deg, #E85D75 0%, #D4793A 100%); padding: 0 16px; animation: alertBlink 2s ease-in-out infinite; }
+.alert-item { max-width: 600px; margin: 0 auto; padding: 14px 0; display: flex; align-items: center; gap: 12px; }
+.alert-bell { font-size: 22px; animation: bellRing 1s ease-in-out infinite; }
+.alert-label { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.5px; margin-bottom: 2px; }
+.alert-text { font-size: 15px; color: rgba(255,255,255,0.95); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alert-dismiss { background: rgba(255,255,255,0.2); border: none; color: #fff; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+.alert-dismiss:hover { background: rgba(255,255,255,0.35); }
 
-  .shopping-link { width: 100%; padding: 16px 20px; border-radius: 16px; background: rgba(196,144,228,0.08); border: 1px solid rgba(196,144,228,0.15); cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all 0.2s; margin-bottom: 16px; }
-  .shopping-link:hover { background: rgba(196,144,228,0.14); }
+.shopping-link { width: 100%; padding: 16px 20px; border-radius: 16px; background: rgba(196,144,228,0.08); border: 1px solid rgba(196,144,228,0.15); cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all 0.2s; margin-bottom: 16px; }
+.shopping-link:hover { background: rgba(196,144,228,0.14); }
 
-  .agent-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-  .agent-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.agent-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.agent-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 
-  .hidden { display: none !important; }
+.hidden { display: none !important; }
 </style>
+
 </head>
 <body>
 
@@ -131,6 +133,11 @@
     <div class="header-sub">Planificateur intelligent</div>
     <h1>Agent de Vie</h1>
     <div class="header-stats" id="header-stats"></div>
+    <div id="notif-banner" class="hidden" style="margin-top:14px">
+      <button id="notif-btn" onclick="enableNotifications()" style="background:rgba(232,93,117,0.12);border:1px solid rgba(232,93,117,0.25);color:#E85D75;padding:10px 20px;border-radius:14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;margin:0 auto;transition:all 0.2s">
+        <span style="font-size:18px">🔔</span> Activer les notifications de rappel
+      </button>
+    </div>
   </div>
 
   <div class="nav" id="nav"></div>
@@ -303,7 +310,7 @@ function checkAlerts() {
     if (dismissedAlerts.has(item.id)) return false;
     const [h,m] = item.time.split(":").map(Number);
     const diff = (h*60+m) - currentMin;
-    return diff<=15 && diff>=-5;
+    return diff<=20 && diff>=-5;
   });
   const banner = document.getElementById("alert-banner");
   const content = document.getElementById("alert-content");
@@ -336,7 +343,20 @@ function playAlertSound() {
 }
 
 // ── Voice Recognition ──
+function isPWA() {
+  return window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+}
+
 function startVoice() {
+  // If in PWA mode on iOS, open Safari for voice support
+  if (isPWA()) {
+    const url = window.location.href;
+    // Open in Safari by using a trick: window.open won't work in PWA, so we use a link
+    const safariUrl = url.includes("?") ? url + "&voice=1" : url + "?voice=1";
+    window.location.href = safariUrl;
+    return;
+  }
+
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { alert("La reconnaissance vocale n'est pas supportée. Utilise Chrome ou Safari."); return; }
   if (isListening && recognition) { recognition.stop(); return; }
@@ -556,6 +576,131 @@ function resetData() {
   }
 }
 
+// ── Notifications ──
+let notifPermission = "default";
+let notifiedItems = new Set(); // avoid duplicate notifications
+
+async function requestNotifPermission() {
+  if (!("Notification" in window)) { 
+    console.log("Notifications not supported"); 
+    document.getElementById("notif-banner").classList.add("hidden");
+    return; 
+  }
+  notifPermission = Notification.permission;
+  // Show the enable button only if permission not yet granted
+  if (notifPermission === "default") {
+    document.getElementById("notif-banner").classList.remove("hidden");
+  } else if (notifPermission === "granted") {
+    document.getElementById("notif-banner").classList.add("hidden");
+  } else {
+    document.getElementById("notif-banner").classList.add("hidden");
+  }
+}
+
+async function enableNotifications() {
+  if (!("Notification" in window)) { 
+    alert("Les notifications ne sont pas supportées sur ce navigateur."); 
+    return; 
+  }
+  try {
+    notifPermission = await Notification.requestPermission();
+    if (notifPermission === "granted") {
+      document.getElementById("notif-banner").classList.add("hidden");
+      showToast("Notifications activées !", "#6DD4A0");
+      // Send a test notification
+      setTimeout(() => {
+        sendNotification("✅ Agent de Vie", "Les notifications sont activées ! Tu seras prévenu avant tes RDV.", "test");
+      }, 1000);
+    } else {
+      alert("Tu as refusé les notifications. Tu peux les réactiver dans les réglages de Safari.");
+    }
+  } catch(e) {
+    alert("Erreur : " + e.message);
+  }
+}
+
+function sendNotification(title, body, tag) {
+  if (notifPermission !== "granted") return;
+  try {
+    // Try service worker notifications first (works in PWA mode on iOS)
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "SHOW_NOTIFICATION",
+        title: title,
+        body: body,
+        tag: tag
+      });
+    } else {
+      // Fallback to regular Notification API
+      new Notification(title, {
+        body: body,
+        icon: "🧠",
+        tag: tag, // prevents duplicate notifications
+        requireInteraction: true
+      });
+    }
+  } catch(e) { console.warn("Notification failed:", e); }
+}
+
+function checkNotifications() {
+  if (notifPermission !== "granted") return;
+  const now = new Date();
+  const ts = todayStr();
+  const tomorrowDate = new Date(now);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowStr = toDateStr(tomorrowDate);
+  const currentMin = now.getHours() * 60 + now.getMinutes();
+
+  items.forEach(item => {
+    if (item.done || !item.time || item.agent === "shopping") return;
+    const [h, m] = item.time.split(":").map(Number);
+
+    // ── La veille : notification le soir (à partir de 20h) ──
+    const notifKeyVeille = item.id + "-veille";
+    if (item.date === tomorrowStr && currentMin >= 1200 && !notifiedItems.has(notifKeyVeille)) {
+      notifiedItems.add(notifKeyVeille);
+      sendNotification("📅 Demain", `${item.text} à ${item.time}`, notifKeyVeille);
+    }
+
+    // ── Le jour même ──
+    if (item.date !== ts) return;
+    const diff = (h * 60 + m) - currentMin;
+
+    // 2 heures avant
+    const notifKey120 = item.id + "-120";
+    if (diff <= 120 && diff > 115 && !notifiedItems.has(notifKey120)) {
+      notifiedItems.add(notifKey120);
+      sendNotification("⏰ Dans 2 heures", `${item.text} à ${item.time}`, notifKey120);
+    }
+
+    // 20 minutes avant
+    const notifKey20 = item.id + "-20";
+    if (diff <= 20 && diff > 15 && !notifiedItems.has(notifKey20)) {
+      notifiedItems.add(notifKey20);
+      sendNotification("⚠️ Dans 20 minutes !", `${item.text} à ${item.time}`, notifKey20);
+    }
+
+    // Au moment du RDV
+    const notifKey0 = item.id + "-0";
+    if (diff <= 0 && diff > -2 && !notifiedItems.has(notifKey0)) {
+      notifiedItems.add(notifKey0);
+      sendNotification("🔔 C'est maintenant !", item.text, notifKey0);
+    }
+  });
+}
+
+// ── Service Worker Registration (for PWA notifications on iOS) ──
+async function registerServiceWorker() {
+  if ("serviceWorker" in navigator) {
+    try {
+      const sw = await navigator.serviceWorker.register("sw.js");
+      console.log("Service Worker registered:", sw.scope);
+    } catch(e) {
+      console.warn("SW registration failed:", e);
+    }
+  }
+}
+
 // ── Events ──
 document.getElementById("mic-btn").addEventListener("click", startVoice);
 document.getElementById("send-btn").addEventListener("click", () => {
@@ -569,8 +714,39 @@ document.getElementById("text-input").addEventListener("keydown", (e) => {
 // ── Init ──
 loadItems();
 render();
-setInterval(checkAlerts, 30000);
+registerServiceWorker();
+requestNotifPermission();
+setInterval(checkAlerts, 60000);
+setInterval(checkNotifications, 60000);
 checkAlerts();
+checkNotifications();
+
+// Auto-start voice if opened from PWA with ?voice=1
+if (window.location.search.includes("voice=1")) {
+  // Clean the URL
+  history.replaceState(null, "", window.location.pathname);
+  // Small delay to let the page load, then start voice
+  setTimeout(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      recognition = new SR();
+      recognition.lang = "fr-FR";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onstart = () => { isListening=true; updateMicUI(); };
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        document.getElementById("text-input").value = text;
+        addItem(text);
+        document.getElementById("text-input").value = "";
+      };
+      recognition.onerror = () => { isListening=false; updateMicUI(); };
+      recognition.onend = () => { isListening=false; updateMicUI(); };
+      recognition.start();
+    }
+  }, 500);
+}
 </script>
+
 </body>
 </html>
