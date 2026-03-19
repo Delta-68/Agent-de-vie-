@@ -231,10 +231,31 @@ function parseDate(text) {
 }
 function parseTime(text) {
   const lower = text.toLowerCase();
+  // Explicit time: 14h, 14h30, 14:30
   const m = lower.match(/(\d{1,2})\s*[h:]\s*(\d{0,2})/);
   if (m) return `${String(parseInt(m[1])).padStart(2,'0')}:${String(m[2]?parseInt(m[2]):0).padStart(2,'0')}`;
   if (/\bmidi\b/.test(lower)) return "12:00";
   if (/\bminuit\b/.test(lower)) return "00:00";
+  // "dans X heures" / "dans X heure"
+  const mDansH = lower.match(/dans\s+(\d+)\s*heure/);
+  if (mDansH) {
+    const future = new Date();
+    future.setHours(future.getHours() + parseInt(mDansH[1]));
+    return `${String(future.getHours()).padStart(2,'0')}:${String(future.getMinutes()).padStart(2,'0')}`;
+  }
+  // "dans X minutes" / "dans 30 min"
+  const mDansM = lower.match(/dans\s+(\d+)\s*min/);
+  if (mDansM) {
+    const future = new Date();
+    future.setMinutes(future.getMinutes() + parseInt(mDansM[1]));
+    return `${String(future.getHours()).padStart(2,'0')}:${String(future.getMinutes()).padStart(2,'0')}`;
+  }
+  // "cet après-midi" → 14h
+  if (/cet\s*après[- ]?midi/.test(lower)) return "14:00";
+  // "ce matin" → 09h
+  if (/ce\s*matin/.test(lower)) return "09:00";
+  // "ce soir" → 19h
+  if (/ce\s*soir/.test(lower)) return "19:00";
   return null;
 }
 function toDateStr(d) { return d.toISOString().split("T")[0]; }
@@ -247,9 +268,19 @@ function formatDateFR(ds) { const d=new Date(ds+"T12:00:00"); return d.toLocaleD
 // ── Agent Detection ──
 function detectAgent(text) {
   const lower = text.toLowerCase();
+
+  // Special case: "rappelle-moi que j'ai rendez-vous" or "rappelle-moi rdv" → calendar
+  if (/rappell?e[- ]?moi.*(rendez[- ]?vous|rdv|réunion|meeting|dentiste|médecin|docteur|consultation|dîner|déjeuner|cours|examen)/i.test(lower)) {
+    return "calendar";
+  }
+  // "rappelle-moi que j'ai ... cet après-midi/ce soir/demain à Xh" with time → calendar
+  if (/rappell?e[- ]?moi/.test(lower) && parseTime(text)) {
+    return "calendar";
+  }
+
   const words = {
-    calendar: ["rendez-vous","rdv","réunion","meeting","consultation","dentiste","médecin","docteur","dîner","déjeuner","cours","examen"],
-    reminders: ["facture","payer","rappel","deadline","échéance","renouveler","rappelle","n'oublie","oublie pas","avant le","date limite"],
+    calendar: ["rendez-vous","rdv","réunion","meeting","consultation","dentiste","médecin","docteur","dîner","déjeuner","cours","examen","cet après-midi","ce matin","ce soir"],
+    reminders: ["facture","payer","rappel","deadline","échéance","renouveler","rappelle","n'oublie","oublie pas","avant le","date limite","me rappeler","rappelle-moi"],
     goals: ["objectif","habitude","routine","fois par semaine","fois par mois","chaque jour","quotidien","commencer à","arrêter de"],
     notes: ["idée","note","penser à","réfléchir","souvenir","pensée"],
     shopping: ["acheter","courses","course","supermarché","magasin","lait","pain","œufs","oeufs","fruits","légumes","viande","poisson","fromage","beurre","liste de courses","il me faut","il faut que j'achète","prendre du","prendre de la","prendre des","manque de","plus de","riz","pâtes","eau","jus","yaourt","shampooing","savon","papier toilette","lessive"],
@@ -289,6 +320,67 @@ function addItem(text, forceAgent) {
   const agentData = AGENTS.find(a=>a.id===agent);
   showToast(`Ajouté à ${agentData.name}`, agentData.color);
   render();
+
+  // Auto-open iPhone calendar for calendar/reminder items with a time
+  if ((agent === "calendar" || agent === "reminders") && time) {
+    setTimeout(() => openCalendar(text.trim(), date, time), 600);
+  }
+}
+
+// ── Calendar Integration ──
+function openCalendar(title, date, time) {
+  // Build ICS file content
+  const [h, m] = time.split(":").map(Number);
+  const start = new Date(date + "T" + String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":00");
+  const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour duration
+
+  const fmt = (d) => {
+    return d.getFullYear() +
+      String(d.getMonth()+1).padStart(2,"0") +
+      String(d.getDate()).padStart(2,"0") + "T" +
+      String(d.getHours()).padStart(2,"0") +
+      String(d.getMinutes()).padStart(2,"0") +
+      String(d.getSeconds()).padStart(2,"0");
+  };
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Agent de Vie//FR",
+    "BEGIN:VEVENT",
+    "DTSTART:" + fmt(start),
+    "DTEND:" + fmt(end),
+    "SUMMARY:" + title,
+    "DESCRIPTION:Ajouté via Agent de Vie",
+    "BEGIN:VALARM",
+    "TRIGGER:-P1D",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Demain : " + title,
+    "END:VALARM",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT2H",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Dans 2h : " + title,
+    "END:VALARM",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT20M",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Dans 20min : " + title,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+
+  // Create and download the .ics file — iOS will open it in Calendar
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "rdv.ics";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function deleteItem(id) { items = items.filter(i=>i.id!==id); saveItems(); render(); }
