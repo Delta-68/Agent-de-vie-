@@ -229,6 +229,18 @@ function parseDate(text) {
   if (mSlash) { let y=mSlash[3]?parseInt(mSlash[3]):now.getFullYear(); if(y<100)y+=2000; return `${y}-${String(parseInt(mSlash[2])).padStart(2,'0')}-${String(parseInt(mSlash[1])).padStart(2,'0')}`; }
   return toDateStr(now);
 }
+// Convert French number words to digits
+function frenchWordToNum(text) {
+  const words = {une:1,un:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,
+    onze:11,douze:12,treize:13,quatorze:14,quinze:15,seize:16,vingt:20,trente:30,
+    "quarante":40,"cinquante":50};
+  const lower = text.toLowerCase().trim();
+  if (words[lower] !== undefined) return words[lower];
+  const num = parseInt(lower);
+  if (!isNaN(num)) return num;
+  return null;
+}
+
 function parseTime(text) {
   const lower = text.toLowerCase();
   // Explicit time: 14h, 14h30, 14:30
@@ -236,19 +248,25 @@ function parseTime(text) {
   if (m) return `${String(parseInt(m[1])).padStart(2,'0')}:${String(m[2]?parseInt(m[2]):0).padStart(2,'0')}`;
   if (/\bmidi\b/.test(lower)) return "12:00";
   if (/\bminuit\b/.test(lower)) return "00:00";
-  // "dans X heures" / "dans X heure"
-  const mDansH = lower.match(/dans\s+(\d+)\s*heure/);
+  // "dans X heures" / "dans une heure" / "dans deux heures"
+  const mDansH = lower.match(/dans\s+([\wé]+)\s*heures?/);
   if (mDansH) {
-    const future = new Date();
-    future.setHours(future.getHours() + parseInt(mDansH[1]));
-    return `${String(future.getHours()).padStart(2,'0')}:${String(future.getMinutes()).padStart(2,'0')}`;
+    const n = frenchWordToNum(mDansH[1]);
+    if (n) {
+      const future = new Date();
+      future.setHours(future.getHours() + n);
+      return `${String(future.getHours()).padStart(2,'0')}:${String(future.getMinutes()).padStart(2,'0')}`;
+    }
   }
-  // "dans X minutes" / "dans 30 min"
-  const mDansM = lower.match(/dans\s+(\d+)\s*min/);
+  // "dans X minutes" / "dans trente minutes"
+  const mDansM = lower.match(/dans\s+([\wé]+)\s*min/);
   if (mDansM) {
-    const future = new Date();
-    future.setMinutes(future.getMinutes() + parseInt(mDansM[1]));
-    return `${String(future.getHours()).padStart(2,'0')}:${String(future.getMinutes()).padStart(2,'0')}`;
+    const n = frenchWordToNum(mDansM[1]);
+    if (n) {
+      const future = new Date();
+      future.setMinutes(future.getMinutes() + n);
+      return `${String(future.getHours()).padStart(2,'0')}:${String(future.getMinutes()).padStart(2,'0')}`;
+    }
   }
   // "cet après-midi" → 14h
   if (/cet\s*après[- ]?midi/.test(lower)) return "14:00";
@@ -268,6 +286,11 @@ function formatDateFR(ds) { const d=new Date(ds+"T12:00:00"); return d.toLocaleD
 // ── Agent Detection ──
 function detectAgent(text) {
   const lower = text.toLowerCase();
+
+  // "dans X heures/minutes" with a task → calendar (it has a time, it's a timed event)
+  if (/dans\s+([\wé]+)\s*(heures?|min)/.test(lower)) {
+    return "calendar";
+  }
 
   // Special case: "rappelle-moi que j'ai rendez-vous" or "rappelle-moi rdv" → calendar
   if (/rappell?e[- ]?moi.*(rendez[- ]?vous|rdv|réunion|meeting|dentiste|médecin|docteur|consultation|dîner|déjeuner|cours|examen)/i.test(lower)) {
@@ -329,10 +352,9 @@ function addItem(text, forceAgent) {
 
 // ── Calendar Integration ──
 function openCalendar(title, date, time) {
-  // Build ICS file content
   const [h, m] = time.split(":").map(Number);
   const start = new Date(date + "T" + String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":00");
-  const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour duration
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
 
   const fmt = (d) => {
     return d.getFullYear() +
@@ -343,44 +365,60 @@ function openCalendar(title, date, time) {
       String(d.getSeconds()).padStart(2,"0");
   };
 
+  // Clean title for ICS (remove special chars that break ICS format)
+  const cleanTitle = title.replace(/[\\;,]/g, ' ');
+
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
     "PRODID:-//Agent de Vie//FR",
     "BEGIN:VEVENT",
+    "UID:" + Date.now() + "@agentdevie",
     "DTSTART:" + fmt(start),
     "DTEND:" + fmt(end),
-    "SUMMARY:" + title,
-    "DESCRIPTION:Ajouté via Agent de Vie",
+    "SUMMARY:" + cleanTitle,
+    "DESCRIPTION:Ajoute via Agent de Vie",
     "BEGIN:VALARM",
     "TRIGGER:-P1D",
     "ACTION:DISPLAY",
-    "DESCRIPTION:Demain : " + title,
+    "DESCRIPTION:Demain",
     "END:VALARM",
     "BEGIN:VALARM",
     "TRIGGER:-PT2H",
     "ACTION:DISPLAY",
-    "DESCRIPTION:Dans 2h : " + title,
+    "DESCRIPTION:Dans 2h",
     "END:VALARM",
     "BEGIN:VALARM",
     "TRIGGER:-PT20M",
     "ACTION:DISPLAY",
-    "DESCRIPTION:Dans 20min : " + title,
+    "DESCRIPTION:Dans 20min",
     "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR"
   ].join("\r\n");
 
-  // Create and download the .ics file — iOS will open it in Calendar
-  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "rdv.ics";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Method 1: Try direct data URI (works on most Safari versions)
+  const dataUri = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+  
+  // Create a hidden link and click it
+  const link = document.createElement("a");
+  link.href = dataUri;
+  link.download = "agent-de-vie-rdv.ics";
+  link.style.display = "none";
+  document.body.appendChild(link);
+  
+  // For iOS Safari, we need to use window.open as fallback
+  try {
+    link.click();
+  } catch(e) {
+    window.open(dataUri, "_blank");
+  }
+  
+  setTimeout(() => document.body.removeChild(link), 1000);
+  
+  showToast("📲 Ouvre le fichier pour ajouter au calendrier", "#E8A838");
 }
 
 function deleteItem(id) { items = items.filter(i=>i.id!==id); saveItems(); render(); }
