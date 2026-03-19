@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agent de Vie">
+<meta name="theme-color" content="#0D0D0F">
+<title>Agent de Vie</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+    background: #0D0D0F;
+    color: #E8E6E1;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  input::placeholder { color: #555; }
+  input { font-family: inherit; }
+  button { font-family: inherit; }
+
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
+  @keyframes alertBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  @keyframes alertSlideIn { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bellRing { 0%,100%{transform:rotate(0)} 15%{transform:rotate(14deg)} 30%{transform:rotate(-14deg)} 45%{transform:rotate(10deg)} 60%{transform:rotate(-10deg)} 75%{transform:rotate(4deg)} }
+  @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(30px); } }
+
+  .ambient { position: fixed; top:0; left:0; right:0; bottom:0; pointer-events: none; z-index: 0; }
+  .ambient-a { position:absolute; top:-20%; right:-10%; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,rgba(232,168,56,0.06) 0%,transparent 70%); animation: glow 8s ease-in-out infinite; }
+  .ambient-b { position:absolute; bottom:-15%; left:-5%; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,rgba(93,184,232,0.05) 0%,transparent 70%); animation: glow 10s ease-in-out infinite 2s; }
+
+  .main { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; padding: 0 20px 140px; }
+  .header { padding: 32px 0 24px; text-align: center; }
+  .header-sub { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: #666; font-family: 'Space Mono', monospace; margin-bottom: 8px; }
+  .header h1 { font-size: 32px; font-weight: 700; letter-spacing: -1px; background: linear-gradient(135deg, #E8E6E1 0%, #AAA 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-stats { font-size: 13px; color: #555; margin-top: 8px; }
+
+  .nav { display: flex; gap: 6px; margin-bottom: 24px; justify-content: center; flex-wrap: wrap; }
+  .nav-btn { padding: 8px 20px; border-radius: 20px; border: none; background: transparent; color: #666; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .nav-btn.active { background: rgba(255,255,255,0.1); color: #E8E6E1; }
+  .nav-reset { padding: 8px 14px; border-radius: 20px; border: none; background: transparent; color: #444; font-size: 13px; cursor: pointer; }
+
+  .pills { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding: 4px 0; justify-content: center; flex-wrap: wrap; }
+  .pill { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); color: #888; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.25s ease; white-space: nowrap; }
+  .pill .icon { font-size: 18px; }
+  .pill .badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center; background: rgba(255,255,255,0.08); color: #888; }
+
+  .section-label { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; font-family: 'Space Mono', monospace; }
+  .section { margin-bottom: 28px; }
+  .card-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .item-card { border-radius: 14px; padding: 14px 18px; display: flex; align-items: flex-start; gap: 14px; transition: all 0.3s ease; position: relative; }
+  .item-card .check { width: 24px; height: 24px; min-width: 24px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all 0.2s ease; color: #fff; font-size: 13px; border: none; }
+  .item-card .text { font-size: 15px; line-height: 1.4; margin-bottom: 6px; word-break: break-word; }
+  .item-card .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .item-card .date { font-size: 12px; font-weight: 500; }
+  .item-card .time { font-size: 12px; font-weight: 600; }
+  .item-card .overdue-tag { font-size: 11px; color: #E85D75; font-weight: 600; letter-spacing: 0.5px; }
+  .item-card .delete { background: none; border: none; color: #555; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 6px; transition: all 0.2s; }
+  .item-card .delete:hover { color: #E85D75; background: rgba(232,93,117,0.1); }
+
+  .shopping-card { border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; transition: all 0.4s ease; }
+  .shopping-card.bought { opacity: 0.4; transform: translateX(20px); }
+  .shopping-card .check { width: 28px; height: 28px; min-width: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; color: #fff; font-size: 14px; font-weight: 700; border: none; }
+  .shopping-card .name { flex: 1; font-size: 16px; font-weight: 500; }
+  .shopping-card .delete { background: none; border: none; color: #555; cursor: pointer; font-size: 18px; padding: 2px 8px; border-radius: 6px; transition: all 0.2s; }
+  .shopping-card .delete:hover { color: #E85D75; }
+
+  .empty { text-align: center; padding: 60px 20px; color: #555; }
+  .empty .big-icon { font-size: 52px; margin-bottom: 16px; }
+  .empty .title { font-size: 18px; font-weight: 600; color: #777; margin-bottom: 10px; }
+  .empty .desc { font-size: 14px; line-height: 1.6; max-width: 340px; margin: 0 auto; }
+
+  .input-area { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, #0D0D0F 60%, transparent); padding: 30px 20px 28px; z-index: 100; padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+  .input-row { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .input-inner { display: flex; align-items: center; gap: 12px; width: 100%; }
+  .text-input { flex: 1; height: 50px; border-radius: 16px; border: 2px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: #E8E6E1; font-size: 15px; padding: 0 18px; outline: none; transition: border-color 0.2s; }
+  .text-input:focus { border-color: rgba(255,255,255,0.2); }
+  .send-btn { width: 50px; height: 50px; border-radius: 14px; border: none; background: rgba(255,255,255,0.08); color: #888; font-size: 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+  .send-btn:hover { background: rgba(255,255,255,0.15); color: #E8E6E1; }
+
+  .mic-btn { width: 72px; height: 72px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; position: relative; border: 3px solid rgba(255,255,255,0.15); background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .mic-btn.listening { border-color: #E85D75; background: radial-gradient(circle, #E85D75 0%, #BE3455 100%); box-shadow: 0 0 30px rgba(232,93,117,0.4), 0 0 60px rgba(232,93,117,0.15); animation: pulse 1.5s ease-in-out infinite; }
+  .mic-btn svg { pointer-events: none; }
+  .listening-label { font-size: 13px; color: #E85D75; font-weight: 600; animation: pulse 1.5s ease-in-out infinite; }
+
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 1000; animation: slideDown 0.3s ease; pointer-events: none; }
+
+  .alert-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 999; animation: alertSlideIn 0.4s ease; }
+  .alert-bg { background: linear-gradient(135deg, #E85D75 0%, #D4793A 100%); padding: 0 16px; animation: alertBlink 2s ease-in-out infinite; }
+  .alert-item { max-width: 600px; margin: 0 auto; padding: 14px 0; display: flex; align-items: center; gap: 12px; }
+  .alert-bell { font-size: 22px; animation: bellRing 1s ease-in-out infinite; }
+  .alert-label { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .alert-text { font-size: 15px; color: rgba(255,255,255,0.95); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .alert-dismiss { background: rgba(255,255,255,0.2); border: none; color: #fff; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+  .alert-dismiss:hover { background: rgba(255,255,255,0.35); }
+
+  .shopping-link { width: 100%; padding: 16px 20px; border-radius: 16px; background: rgba(196,144,228,0.08); border: 1px solid rgba(196,144,228,0.15); cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all 0.2s; margin-bottom: 16px; }
+  .shopping-link:hover { background: rgba(196,144,228,0.14); }
+
+  .agent-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .agent-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="ambient"><div class="ambient-a"></div><div class="ambient-b"></div></div>
+
+<div id="toast" class="toast hidden"></div>
+
+<div id="alert-banner" class="alert-banner hidden">
+  <div class="alert-bg" id="alert-content"></div>
+</div>
+
+<div class="main">
+  <div class="header">
+    <div class="header-sub">Planificateur intelligent</div>
+    <h1>Agent de Vie</h1>
+    <div class="header-stats" id="header-stats"></div>
+  </div>
+
+  <div class="nav" id="nav"></div>
+  <div class="pills" id="pills"></div>
+  <div id="content" style="animation: fadeIn 0.3s ease"></div>
+</div>
+
+<div class="input-area">
+  <div class="input-row">
+    <div class="input-inner">
+      <input type="text" class="text-input" id="text-input" placeholder="Dicte ou écris ta tâche...">
+      <button class="send-btn" id="send-btn" title="Envoyer">➤</button>
+      <button class="mic-btn" id="mic-btn">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+    </div>
+    <div id="listening-label" class="listening-label hidden">🎙️ J'écoute... parle maintenant</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// AGENT DE VIE — Application autonome
+// ═══════════════════════════════════════════
+
+const AGENTS = [
+  { id:"calendar", name:"Agent Agenda", icon:"📅", color:"#E8A838", gradient:"linear-gradient(135deg,#E8A838 0%,#D4793A 100%)", desc:"Rendez-vous & événements", placeholder:"Ex : « Dentiste mardi 15 avril à 14h »" },
+  { id:"reminders", name:"Agent Rappels", icon:"🔔", color:"#E85D75", gradient:"linear-gradient(135deg,#E85D75 0%,#BE3455 100%)", desc:"Factures, deadlines, rappels", placeholder:"Ex : « Payer facture EDF avant le 20 mars »" },
+  { id:"goals", name:"Agent Objectifs", icon:"🎯", color:"#5DB8E8", gradient:"linear-gradient(135deg,#5DB8E8 0%,#3A7FBE 100%)", desc:"Objectifs & habitudes", placeholder:"Ex : « Courir 3 fois par semaine »" },
+  { id:"notes", name:"Agent Notes", icon:"📝", color:"#6DD4A0", gradient:"linear-gradient(135deg,#6DD4A0 0%,#3AAF6D 100%)", desc:"Idées, notes vocales, pensées", placeholder:"Ex : « Idée : appeler maman pour son anniversaire »" },
+  { id:"shopping", name:"Agent Courses", icon:"🛒", color:"#C490E4", gradient:"linear-gradient(135deg,#C490E4 0%,#9B59B6 100%)", desc:"Liste de courses & achats", placeholder:"Ex : « Acheter du lait, des œufs et du pain »" },
+];
+
+const STORAGE_KEY = "agent-de-vie-items";
+
+// ── State ──
+let items = [];
+let currentView = "dashboard";
+let activeAgent = null;
+let dismissedAlerts = new Set();
+let isListening = false;
+let recognition = null;
+
+// ── Storage ──
+function loadItems() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { items = JSON.parse(raw); }
+  } catch(e) { console.warn("Load failed", e); }
+}
+function saveItems() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }
+  catch(e) { console.warn("Save failed", e); }
+}
+
+// ── Date/Time Parsing ──
+function parseDate(text) {
+  const now = new Date();
+  const months = { janvier:0,février:1,mars:2,avril:3,mai:4,juin:5,juillet:6,août:7,septembre:8,octobre:9,novembre:10,décembre:11, jan:0,fev:1,fév:1,mar:2,avr:3,juil:6,aou:7,aoû:7,sep:8,oct:9,nov:10,dec:11,déc:11 };
+  const days = { lundi:1,mardi:2,mercredi:3,jeudi:4,vendredi:5,samedi:6,dimanche:0 };
+  const lower = text.toLowerCase();
+  if (lower.includes("aujourd'hui")||lower.includes("aujourd hui")) return toDateStr(now);
+  if (lower.includes("demain")) { const d=new Date(now); d.setDate(d.getDate()+1); return toDateStr(d); }
+  if (lower.includes("après-demain")||lower.includes("après demain")) { const d=new Date(now); d.setDate(d.getDate()+2); return toDateStr(d); }
+  for (const [name,num] of Object.entries(days)) {
+    if (lower.includes(name)) { const d=new Date(now); const diff=(num-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return toDateStr(d); }
+  }
+  const mFull = lower.match(/(\d{1,2})\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre|jan|fev|fév|mar|avr|juil|aou|aoû|sep|oct|nov|dec|déc)(?:\s+(\d{4}))?/i);
+  if (mFull) { return `${mFull[3]||now.getFullYear()}-${String((months[mFull[2].toLowerCase()])+1).padStart(2,'0')}-${String(parseInt(mFull[1])).padStart(2,'0')}`; }
+  const mSlash = text.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+  if (mSlash) { let y=mSlash[3]?parseInt(mSlash[3]):now.getFullYear(); if(y<100)y+=2000; return `${y}-${String(parseInt(mSlash[2])).padStart(2,'0')}-${String(parseInt(mSlash[1])).padStart(2,'0')}`; }
+  return toDateStr(now);
+}
+function parseTime(text) {
+  const lower = text.toLowerCase();
+  const m = lower.match(/(\d{1,2})\s*[h:]\s*(\d{0,2})/);
+  if (m) return `${String(parseInt(m[1])).padStart(2,'0')}:${String(m[2]?parseInt(m[2]):0).padStart(2,'0')}`;
+  if (/\bmidi\b/.test(lower)) return "12:00";
+  if (/\bminuit\b/.test(lower)) return "00:00";
+  return null;
+}
+function toDateStr(d) { return d.toISOString().split("T")[0]; }
+function todayStr() { return toDateStr(new Date()); }
+function isToday(ds) { return ds===todayStr(); }
+function isTomorrow(ds) { const d=new Date(); d.setDate(d.getDate()+1); return ds===toDateStr(d); }
+function isPast(ds) { return ds<todayStr(); }
+function formatDateFR(ds) { const d=new Date(ds+"T12:00:00"); return d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}); }
+
+// ── Agent Detection ──
+function detectAgent(text) {
+  const lower = text.toLowerCase();
+  const words = {
+    calendar: ["rendez-vous","rdv","réunion","meeting","consultation","dentiste","médecin","docteur","dîner","déjeuner","cours","examen"],
+    reminders: ["facture","payer","rappel","deadline","échéance","renouveler","rappelle","n'oublie","oublie pas","avant le","date limite"],
+    goals: ["objectif","habitude","routine","fois par semaine","fois par mois","chaque jour","quotidien","commencer à","arrêter de"],
+    notes: ["idée","note","penser à","réfléchir","souvenir","pensée"],
+    shopping: ["acheter","courses","course","supermarché","magasin","lait","pain","œufs","oeufs","fruits","légumes","viande","poisson","fromage","beurre","liste de courses","il me faut","il faut que j'achète","prendre du","prendre de la","prendre des","manque de","plus de","riz","pâtes","eau","jus","yaourt","shampooing","savon","papier toilette","lessive"],
+  };
+  const scores = {};
+  for (const [agent, list] of Object.entries(words)) { scores[agent]=0; list.forEach(w => { if(lower.includes(w)) scores[agent]+=2; }); }
+  const max = Math.max(...Object.values(scores));
+  if (max===0) return "notes";
+  return Object.entries(scores).find(([,v])=>v===max)[0];
+}
+
+// ── Add Item ──
+function addItem(text, forceAgent) {
+  if (!text.trim()) return;
+  const agent = forceAgent || activeAgent || detectAgent(text);
+
+  if (agent === "shopping") {
+    const cleaned = text.trim()
+      .replace(/^(acheter|prendre|il me faut|il faut|j'ai besoin de|liste de courses?)\s*:?\s*/i,"")
+      .replace(/^(du |de la |des |de l'|le |la |les |l')/i,"");
+    const parts = cleaned.split(/\s*(?:,|et)\s*/i)
+      .map(p=>p.trim().replace(/^(du |de la |des |de l'|le |la |les |l')/i,"").trim())
+      .filter(p=>p.length>0);
+    parts.forEach((part,idx) => {
+      items.unshift({ id: Date.now().toString()+Math.random().toString(36).substr(2,5)+idx, text: part.charAt(0).toUpperCase()+part.slice(1), agent:"shopping", date:todayStr(), time:null, done:false, created:new Date().toISOString() });
+    });
+    saveItems();
+    showToast(`${parts.length} article${parts.length>1?"s":""} ajouté${parts.length>1?"s":""}`, "#C490E4");
+    render();
+    return;
+  }
+
+  const date = parseDate(text);
+  const time = parseTime(text);
+  items.unshift({ id: Date.now().toString()+Math.random().toString(36).substr(2,5), text:text.trim(), agent, date, time, done:false, created:new Date().toISOString() });
+  saveItems();
+  const agentData = AGENTS.find(a=>a.id===agent);
+  showToast(`Ajouté à ${agentData.name}`, agentData.color);
+  render();
+}
+
+function deleteItem(id) { items = items.filter(i=>i.id!==id); saveItems(); render(); }
+function toggleItem(id) { const item = items.find(i=>i.id===id); if(item) item.done=!item.done; saveItems(); render(); }
+function markBought(id) {
+  const item = items.find(i=>i.id===id);
+  if(item) item.done=true;
+  render();
+  setTimeout(()=>{ items=items.filter(i=>i.id!==id); saveItems(); render(); }, 700);
+}
+
+// ── Toast ──
+let toastTimeout = null;
+function showToast(text, color) {
+  const el = document.getElementById("toast");
+  el.textContent = "✓ " + text;
+  el.style.background = color;
+  el.style.boxShadow = `0 4px 20px ${color}40`;
+  el.classList.remove("hidden");
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(()=>el.classList.add("hidden"), 2500);
+}
+
+// ── Alerts ──
+function checkAlerts() {
+  const now = new Date();
+  const ts = todayStr();
+  const currentMin = now.getHours()*60+now.getMinutes();
+  const upcoming = items.filter(item => {
+    if (item.done || !item.time || item.agent==="shopping") return false;
+    if (item.date!==ts) return false;
+    if (dismissedAlerts.has(item.id)) return false;
+    const [h,m] = item.time.split(":").map(Number);
+    const diff = (h*60+m) - currentMin;
+    return diff<=15 && diff>=-5;
+  });
+  const banner = document.getElementById("alert-banner");
+  const content = document.getElementById("alert-content");
+  if (upcoming.length>0) {
+    banner.classList.remove("hidden");
+    content.innerHTML = upcoming.map(a=>`
+      <div class="alert-item">
+        <span class="alert-bell">🔔</span>
+        <div style="flex:1;min-width:0">
+          <div class="alert-label">RAPPEL — ${a.time}</div>
+          <div class="alert-text">${esc(a.text)}</div>
+        </div>
+        <button class="alert-dismiss" onclick="dismissAlert('${a.id}')">OK</button>
+      </div>
+    `).join("") + (upcoming.length>1 ? `<div style="max-width:600px;margin:0 auto;padding:8px 0;text-align:center"><button class="alert-dismiss" style="border-radius:20px;padding:6px 20px" onclick="dismissAllAlerts()">Tout fermer</button></div>` : "");
+    playAlertSound();
+  } else {
+    banner.classList.add("hidden");
+  }
+}
+function dismissAlert(id) { dismissedAlerts.add(id); checkAlerts(); }
+function dismissAllAlerts() { items.filter(i=>!i.done&&i.time).forEach(i=>dismissedAlerts.add(i.id)); checkAlerts(); }
+
+function playAlertSound() {
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const beep = (freq,start,dur) => { const o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=freq; o.type="sine"; g.gain.setValueAtTime(0.3,start); g.gain.exponentialRampToValueAtTime(0.01,start+dur); o.start(start); o.stop(start+dur); };
+    beep(660,ctx.currentTime,0.15); beep(880,ctx.currentTime+0.2,0.15); beep(1100,ctx.currentTime+0.4,0.25);
+  } catch(e) {}
+}
+
+// ── Voice Recognition ──
+function startVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert("La reconnaissance vocale n'est pas supportée. Utilise Chrome ou Safari."); return; }
+  if (isListening && recognition) { recognition.stop(); return; }
+  recognition = new SR();
+  recognition.lang = "fr-FR";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.onstart = () => { isListening=true; updateMicUI(); };
+  recognition.onresult = (e) => {
+    const text = e.results[0][0].transcript;
+    document.getElementById("text-input").value = text;
+    addItem(text);
+    document.getElementById("text-input").value = "";
+  };
+  recognition.onerror = () => { isListening=false; updateMicUI(); };
+  recognition.onend = () => { isListening=false; updateMicUI(); };
+  recognition.start();
+}
+function updateMicUI() {
+  const btn = document.getElementById("mic-btn");
+  const label = document.getElementById("listening-label");
+  const svg = btn.querySelector("svg");
+  if (isListening) {
+    btn.classList.add("listening");
+    svg.querySelector("path").setAttribute("stroke","#fff");
+    svg.querySelectorAll("line").forEach(l=>l.setAttribute("stroke","#fff"));
+    label.classList.remove("hidden");
+  } else {
+    btn.classList.remove("listening");
+    svg.querySelector("path").setAttribute("stroke","#aaa");
+    svg.querySelectorAll("line").forEach(l=>l.setAttribute("stroke","#aaa"));
+    label.classList.add("hidden");
+  }
+}
+
+// ── Escape HTML ──
+function esc(s) { const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+// ── Render ──
+function render() {
+  renderNav();
+  renderPills();
+  renderContent();
+  renderStats();
+  updatePlaceholder();
+}
+
+function renderNav() {
+  const shoppingCount = items.filter(i=>i.agent==="shopping"&&!i.done).length;
+  const views = [
+    { id:"dashboard", label:"Vue d'ensemble" },
+    { id:"agents", label:"Mes Agents" },
+    { id:"shopping", label:`🛒 Courses${shoppingCount>0?` (${shoppingCount})`:""}` },
+  ];
+  document.getElementById("nav").innerHTML = views.map(v =>
+    `<button class="nav-btn ${currentView===v.id?'active':''}" onclick="switchView('${v.id}')">${v.label}</button>`
+  ).join("") + `<button class="nav-reset" title="Réinitialiser" onclick="resetData()">↺</button>`;
+}
+
+function renderPills() {
+  if (currentView==="shopping") { document.getElementById("pills").innerHTML=""; return; }
+  document.getElementById("pills").innerHTML = AGENTS.filter(a=>a.id!=="shopping").map(agent => {
+    const count = items.filter(i=>i.agent===agent.id&&!i.done).length;
+    const isActive = activeAgent===agent.id;
+    return `<button class="pill" style="border-color:${isActive?agent.color:'rgba(255,255,255,0.06)'};background:${isActive?agent.color+'15':'rgba(255,255,255,0.03)'};color:${isActive?agent.color:'#888'}" onclick="toggleAgent('${agent.id}')">
+      <span class="icon">${agent.icon}</span>${agent.name.replace("Agent ","")}${count>0?`<span class="badge" style="background:${isActive?agent.color:'rgba(255,255,255,0.08)'};color:${isActive?'#fff':'#888'}">${count}</span>`:''}
+    </button>`;
+  }).join("");
+}
+
+function renderStats() {
+  const nonShopping = items.filter(i=>i.agent!=="shopping");
+  const today = nonShopping.filter(i=>i.date===todayStr()&&!i.done).length;
+  const overdue = nonShopping.filter(i=>isPast(i.date)&&!i.done&&i.date!==todayStr()).length;
+  const done = nonShopping.filter(i=>i.done).length;
+  const el = document.getElementById("header-stats");
+  if (items.length===0) { el.textContent=""; return; }
+  el.textContent = `${today} aujourd'hui${overdue>0?` · ${overdue} en retard`:""} · ${done} terminé${done>1?"s":""}`;
+}
+
+function renderContent() {
+  const el = document.getElementById("content");
+  if (currentView==="dashboard" && !activeAgent) { el.innerHTML = renderDashboard(); }
+  else if (currentView==="shopping") { el.innerHTML = renderShopping(); }
+  else { el.innerHTML = renderAgents(); }
+}
+
+function renderDashboard() {
+  if (items.length===0) {
+    return `<div class="empty"><div class="big-icon">🎙️</div><div class="title">Commence à parler</div><div class="desc">Appuie sur le micro et dicte tes rendez-vous, rappels, objectifs, notes ou courses. L'agent adapté s'en occupe automatiquement.</div></div>`;
+  }
+  const nonShopping = items.filter(i=>i.agent!=="shopping");
+  const ts = todayStr();
+  const overdue = nonShopping.filter(i=>isPast(i.date)&&!i.done&&i.date!==ts);
+  const today = nonShopping.filter(i=>i.date===ts&&!i.done);
+  const upcoming = nonShopping.filter(i=>i.date>ts&&!i.done).sort((a,b)=>a.date.localeCompare(b.date));
+  const done = nonShopping.filter(i=>i.done);
+  const shoppingCount = items.filter(i=>i.agent==="shopping"&&!i.done).length;
+  let html = "";
+  if (overdue.length) html += renderSection("⚠ En retard", overdue.length, "#E85D75", overdue);
+  if (today.length) html += renderSection("Aujourd'hui", today.length, "#E8A838", today);
+  if (upcoming.length) html += renderSection("À venir", upcoming.length, "#5DB8E8", upcoming.slice(0,10));
+  if (done.length) html += renderSection("Terminés", done.length, "#444", done.slice(0,5));
+  if (shoppingCount>0) {
+    html += `<button class="shopping-link" onclick="switchView('shopping')">
+      <span style="font-size:24px">🛒</span>
+      <div style="flex:1;text-align:left">
+        <div style="font-size:14px;font-weight:600;color:#C490E4">${shoppingCount} article${shoppingCount>1?"s":""} à acheter</div>
+        <div style="font-size:12px;color:#777;margin-top:2px">Voir la liste de courses →</div>
+      </div>
+    </button>`;
+  }
+  return html;
+}
+
+function renderSection(label, count, color, list) {
+  return `<div class="section">
+    <div class="section-label" style="color:${color}">${label} (${count})</div>
+    <div class="card-list">${list.map(item=>renderItemCard(item)).join("")}</div>
+  </div>`;
+}
+
+function renderItemCard(item) {
+  const agent = AGENTS.find(a=>a.id===item.agent);
+  const past = isPast(item.date)&&!item.done;
+  const dateLabel = isToday(item.date)?"Aujourd'hui":isTomorrow(item.date)?"Demain":formatDateFR(item.date);
+  return `<div class="item-card" style="background:${item.done?'rgba(255,255,255,0.03)':past?'rgba(232,93,117,0.08)':'rgba(255,255,255,0.06)'};border-left:3px solid ${item.done?'rgba(255,255,255,0.1)':agent.color};opacity:${item.done?0.5:1}">
+    <button class="check" style="background:${item.done?agent.color:'transparent'};border:${item.done?'none':`2px solid ${agent.color}40`}" onclick="toggleItem('${item.id}')">${item.done?'✓':''}</button>
+    <div style="flex:1;min-width:0">
+      <div class="text" style="color:${item.done?'#666':'#E8E6E1'};text-decoration:${item.done?'line-through':'none'}">${esc(item.text)}</div>
+      <div class="meta">
+        <span class="date" style="color:${past&&!item.done?'#E85D75':'#777'}">${dateLabel}</span>
+        ${item.time?`<span class="time" style="color:${agent.color}">${item.time}</span>`:''}
+        ${past&&!item.done?'<span class="overdue-tag">EN RETARD</span>':''}
+      </div>
+    </div>
+    <button class="delete" onclick="deleteItem('${item.id}')">×</button>
+  </div>`;
+}
+
+function renderShopping() {
+  const list = items.filter(i=>i.agent==="shopping"&&!i.done);
+  let html = `<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+    <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#C490E4 0%,#9B59B6 100%);display:flex;align-items:center;justify-content:center;font-size:24px">🛒</div>
+    <div><div style="font-size:20px;font-weight:700;color:#C490E4">Liste de Courses</div>
+    <div style="font-size:13px;color:#666">${list.length>0?`${list.length} article${list.length>1?'s':''} à acheter`:'Ta liste est vide'}</div></div>
+  </div>`;
+  if (list.length===0) {
+    html += `<div style="text-align:center;padding:50px 20px;color:#555;background:rgba(196,144,228,0.04);border-radius:18px">
+      <div style="font-size:48px;margin-bottom:14px">🛒</div>
+      <div style="font-size:16px;font-weight:600;color:#777;margin-bottom:8px">Rien à acheter !</div>
+      <div style="font-size:14px;line-height:1.6;max-width:320px;margin:0 auto">Dis par exemple « Acheter du lait, des œufs et du pain » et ça crée ta liste automatiquement.</div>
+    </div>`;
+  } else {
+    html += `<div style="display:flex;flex-direction:column;gap:6px">${list.map(item=>
+      `<div class="shopping-card ${item.done?'bought':''}" style="background:${item.done?'rgba(109,212,160,0.1)':'rgba(255,255,255,0.05)'};border-left:${item.done?'3px solid #6DD4A0':'3px solid #C490E4'}">
+        <button class="check" style="background:${item.done?'#6DD4A0':'transparent'};border:${item.done?'none':'2px solid #C490E440'}" onclick="markBought('${item.id}')">${item.done?'✓':''}</button>
+        <div class="name" style="color:${item.done?'#6DD4A0':'#E8E6E1'};text-decoration:${item.done?'line-through':'none'}">${esc(item.text)}</div>
+        <button class="delete" onclick="deleteItem('${item.id}')">×</button>
+      </div>`
+    ).join("")}</div>`;
+  }
+  return html;
+}
+
+function renderAgents() {
+  const filtered = AGENTS.filter(a=>a.id!=="shopping").filter(a=>!activeAgent||a.id===activeAgent);
+  let html = "";
+  let anyContent = false;
+  filtered.forEach(agent => {
+    const list = items.filter(i=>i.agent===agent.id&&!i.done).sort((a,b)=>a.date.localeCompare(b.date));
+    if (!activeAgent && list.length===0) return;
+    anyContent = true;
+    html += `<div style="margin-bottom:32px">
+      <div class="agent-header">
+        <div class="agent-icon" style="background:${agent.gradient}">${agent.icon}</div>
+        <div><div style="font-size:16px;font-weight:700;color:${agent.color}">${agent.name}</div><div style="font-size:12px;color:#666">${agent.desc}</div></div>
+      </div>
+      ${list.length===0?`<div style="text-align:center;padding:30px 20px;color:#444;background:rgba(255,255,255,0.02);border-radius:14px;font-size:14px">Aucune tâche active. Dicte quelque chose !</div>`
+      :`<div class="card-list">${list.map(i=>renderItemCard(i)).join("")}</div>`}
+    </div>`;
+  });
+  if (!anyContent) {
+    html = `<div style="text-align:center;padding:50px 20px;color:#555"><div style="font-size:40px;margin-bottom:12px">🤖</div><div style="font-size:15px">Tes agents attendent tes instructions !</div></div>`;
+  }
+  return html;
+}
+
+function updatePlaceholder() {
+  const input = document.getElementById("text-input");
+  if (activeAgent) {
+    const agent = AGENTS.find(a=>a.id===activeAgent);
+    input.placeholder = agent ? agent.placeholder : "Dicte ou écris ta tâche...";
+  } else if (currentView==="shopping") {
+    input.placeholder = "Ex : « Acheter du lait, des œufs et du pain »";
+  } else {
+    input.placeholder = "Dicte ou écris ta tâche...";
+  }
+}
+
+// ── Navigation ──
+function switchView(v) {
+  currentView = v;
+  activeAgent = v==="shopping" ? "shopping" : null;
+  render();
+}
+function toggleAgent(id) {
+  if (activeAgent===id) { activeAgent=null; currentView="agents"; }
+  else { activeAgent=id; currentView="agents"; }
+  render();
+}
+function resetData() {
+  if (confirm("Supprimer toutes les données ? Cette action est irréversible.")) {
+    items = [];
+    localStorage.removeItem(STORAGE_KEY);
+    render();
+  }
+}
+
+// ── Events ──
+document.getElementById("mic-btn").addEventListener("click", startVoice);
+document.getElementById("send-btn").addEventListener("click", () => {
+  const input = document.getElementById("text-input");
+  if (input.value.trim()) { addItem(input.value); input.value=""; }
+});
+document.getElementById("text-input").addEventListener("keydown", (e) => {
+  if (e.key==="Enter" && e.target.value.trim()) { addItem(e.target.value); e.target.value=""; }
+});
+
+// ── Init ──
+loadItems();
+render();
+setInterval(checkAlerts, 30000);
+checkAlerts();
+</script>
+</body>
+</html>
