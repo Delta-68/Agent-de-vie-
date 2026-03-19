@@ -273,10 +273,12 @@ function formatDateFR(ds) { const d=new Date(ds+"T12:00:00"); return d.toLocaleD
 function detectAgent(text) {
   const lower = text.toLowerCase();
 
-  // ── Shopping detection FIRST (highest priority if shopping words found) ──
+  // ── Shopping detection — but NOT if "rappelle-moi" or "dans X heures" is present ──
   const shoppingWords = ["acheter","courses","course","supermarché","magasin","lait","pain","œufs","oeufs","fruits","légumes","viande","poisson","fromage","beurre","liste de courses","il me faut","il faut que j'achète","prendre du","prendre de la","prendre des","manque de","plus de","riz","pâtes","eau","jus","yaourt","shampooing","savon","papier toilette","lessive","carottes","tomates","poulet","boeuf","porc","saucisse","huile","sel","poivre","farine","sucre","café","thé","chocolat"];
   const hasShoppingWord = shoppingWords.some(w => lower.includes(w));
-  if (hasShoppingWord) return "shopping";
+  const hasRappelle = /rappell?e|dans\s+[\wé]+\s*(heures?|min)|n'oublie|oublie pas/.test(lower);
+  // Only go to shopping if it's a direct shopping list, not a reminder about shopping
+  if (hasShoppingWord && !hasRappelle) return "shopping";
 
   // ── Calendar: real appointments with specific people/places/events ──
   const calendarWords = ["rendez-vous","rdv","réunion","meeting","consultation","dentiste","médecin","docteur","dîner","déjeuner","cours","examen","coiffeur","kiné","avocat","banque","entretien","interview","vol","train","resto","restaurant"];
@@ -303,11 +305,52 @@ function detectAgent(text) {
   return "notes";
 }
 
+// ── Extract shopping items from text ──
+function extractShoppingItems(text) {
+  const lower = text.toLowerCase();
+  // Look for pattern: "acheter [items]" or "prendre [items]"
+  const m = lower.match(/(?:acheter|prendre|achet[ée])\s+(.+?)(?:\s+(?:dans|avant|demain|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|cet|ce\s)|\s*$)/i);
+  if (!m) return [];
+  const raw = m[1];
+  const parts = raw.split(/\s*(?:,|et)\s*/i)
+    .map(p => p.trim().replace(/^(du |de la |des |de l'|le |la |les |l')/i,"").trim())
+    .filter(p => p.length > 1);
+  return parts;
+}
+
 // ── Add Item ──
 function addItem(text, forceAgent) {
   if (!text.trim()) return;
   const agent = forceAgent || activeAgent || detectAgent(text);
+  const lower = text.toLowerCase();
 
+  // ── DUAL ACTION: "rappelle-moi d'acheter X dans Y" → Reminder + Shopping ──
+  const isReminderAboutShopping = /rappell?e|dans\s+[\wé]+\s*(heures?|min)|n'oublie|oublie pas/.test(lower) 
+    && /acheter|prendre|achet/.test(lower);
+  
+  if (isReminderAboutShopping) {
+    // 1. Add to Reminders with time
+    const date = parseDate(text);
+    const time = parseTime(text);
+    items.unshift({ id: Date.now().toString()+Math.random().toString(36).substr(2,5), text:text.trim(), agent:"reminders", date, time, done:false, created:new Date().toISOString() });
+    
+    // 2. Extract and add shopping items
+    const shoppingParts = extractShoppingItems(text);
+    shoppingParts.forEach((part, idx) => {
+      items.unshift({ id: Date.now().toString()+Math.random().toString(36).substr(2,5)+"s"+idx, text: part.charAt(0).toUpperCase()+part.slice(1), agent:"shopping", date:todayStr(), time:null, done:false, created:new Date().toISOString() });
+    });
+    
+    saveItems();
+    if (shoppingParts.length > 0) {
+      showToast(`Rappel créé + ${shoppingParts.length} article${shoppingParts.length>1?"s":""} en courses`, "#E85D75");
+    } else {
+      showToast("Ajouté aux Rappels", "#E85D75");
+    }
+    render();
+    return;
+  }
+
+  // ── SHOPPING: direct shopping list ──
   if (agent === "shopping") {
     const cleaned = text.trim()
       .replace(/^(acheter|prendre|il me faut|il faut|j'ai besoin de|liste de courses?)\s*:?\s*/i,"")
@@ -324,6 +367,7 @@ function addItem(text, forceAgent) {
     return;
   }
 
+  // ── OTHER AGENTS: calendar, reminders, goals, notes ──
   const date = parseDate(text);
   const time = parseTime(text);
   items.unshift({ id: Date.now().toString()+Math.random().toString(36).substr(2,5), text:text.trim(), agent, date, time, done:false, created:new Date().toISOString() });
