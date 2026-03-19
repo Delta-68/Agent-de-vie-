@@ -105,10 +105,7 @@
 .send-btn { width: 50px; height: 50px; border-radius: 14px; border: none; background: rgba(255,255,255,0.08); color: #888; font-size: 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
 .send-btn:hover { background: rgba(255,255,255,0.15); color: #E8E6E1; }
 
-.mic-btn { width: 72px; height: 72px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; position: relative; border: 3px solid rgba(255,255,255,0.15); background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-.mic-btn.listening { border-color: #E85D75; background: radial-gradient(circle, #E85D75 0%, #BE3455 100%); box-shadow: 0 0 30px rgba(232,93,117,0.4), 0 0 60px rgba(232,93,117,0.15); animation: pulse 1.5s ease-in-out infinite; }
-.mic-btn svg { pointer-events: none; }
-.listening-label { font-size: 13px; color: #E85D75; font-weight: 600; animation: pulse 1.5s ease-in-out infinite; }
+.listening-label { display: none; }
 
 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 1000; animation: slideDown 0.3s ease; pointer-events: none; }
 
@@ -163,16 +160,7 @@
     <div class="input-inner">
       <input type="text" class="text-input" id="text-input" placeholder="Dicte ou écris ta tâche...">
       <button class="send-btn" id="send-btn" title="Envoyer">➤</button>
-      <button class="mic-btn" id="mic-btn">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-          <line x1="12" y1="19" x2="12" y2="23"/>
-          <line x1="8" y1="23" x2="16" y2="23"/>
-        </svg>
-      </button>
     </div>
-    <div id="listening-label" class="listening-label hidden">🎙️ J'écoute... parle maintenant</div>
   </div>
 </div>
 
@@ -196,8 +184,6 @@ let items = [];
 let currentView = "dashboard";
 let activeAgent = null;
 let dismissedAlerts = new Set();
-let isListening = false;
-let recognition = null;
 
 // ── Storage ──
 function loadItems() {
@@ -287,32 +273,34 @@ function formatDateFR(ds) { const d=new Date(ds+"T12:00:00"); return d.toLocaleD
 function detectAgent(text) {
   const lower = text.toLowerCase();
 
-  // "dans X heures/minutes" with a task → calendar (it has a time, it's a timed event)
-  if (/dans\s+([\wé]+)\s*(heures?|min)/.test(lower)) {
+  // ── Shopping detection FIRST (highest priority if shopping words found) ──
+  const shoppingWords = ["acheter","courses","course","supermarché","magasin","lait","pain","œufs","oeufs","fruits","légumes","viande","poisson","fromage","beurre","liste de courses","il me faut","il faut que j'achète","prendre du","prendre de la","prendre des","manque de","plus de","riz","pâtes","eau","jus","yaourt","shampooing","savon","papier toilette","lessive","carottes","tomates","poulet","boeuf","porc","saucisse","huile","sel","poivre","farine","sucre","café","thé","chocolat"];
+  const hasShoppingWord = shoppingWords.some(w => lower.includes(w));
+  if (hasShoppingWord) return "shopping";
+
+  // ── Calendar: real appointments with specific people/places/events ──
+  const calendarWords = ["rendez-vous","rdv","réunion","meeting","consultation","dentiste","médecin","docteur","dîner","déjeuner","cours","examen","coiffeur","kiné","avocat","banque","entretien","interview","vol","train","resto","restaurant"];
+  const hasCalendarWord = calendarWords.some(w => lower.includes(w));
+  
+  // "rappelle-moi" + calendar word → agenda
+  if (/rappell?e[- ]?moi/.test(lower) && hasCalendarWord) {
     return "calendar";
   }
 
-  // Special case: "rappelle-moi que j'ai rendez-vous" or "rappelle-moi rdv" → calendar
-  if (/rappell?e[- ]?moi.*(rendez[- ]?vous|rdv|réunion|meeting|dentiste|médecin|docteur|consultation|dîner|déjeuner|cours|examen)/i.test(lower)) {
-    return "calendar";
-  }
-  // "rappelle-moi que j'ai ... cet après-midi/ce soir/demain à Xh" with time → calendar
-  if (/rappell?e[- ]?moi/.test(lower) && parseTime(text)) {
-    return "calendar";
-  }
+  // Pure calendar word without "rappelle" → agenda
+  if (hasCalendarWord) return "calendar";
 
-  const words = {
-    calendar: ["rendez-vous","rdv","réunion","meeting","consultation","dentiste","médecin","docteur","dîner","déjeuner","cours","examen","cet après-midi","ce matin","ce soir"],
-    reminders: ["facture","payer","rappel","deadline","échéance","renouveler","rappelle","n'oublie","oublie pas","avant le","date limite","me rappeler","rappelle-moi"],
-    goals: ["objectif","habitude","routine","fois par semaine","fois par mois","chaque jour","quotidien","commencer à","arrêter de"],
-    notes: ["idée","note","penser à","réfléchir","souvenir","pensée"],
-    shopping: ["acheter","courses","course","supermarché","magasin","lait","pain","œufs","oeufs","fruits","légumes","viande","poisson","fromage","beurre","liste de courses","il me faut","il faut que j'achète","prendre du","prendre de la","prendre des","manque de","plus de","riz","pâtes","eau","jus","yaourt","shampooing","savon","papier toilette","lessive"],
-  };
-  const scores = {};
-  for (const [agent, list] of Object.entries(words)) { scores[agent]=0; list.forEach(w => { if(lower.includes(w)) scores[agent]+=2; }); }
-  const max = Math.max(...Object.values(scores));
-  if (max===0) return "notes";
-  return Object.entries(scores).find(([,v])=>v===max)[0];
+  // ── Goals ──
+  const goalWords = ["objectif","habitude","routine","fois par semaine","fois par mois","chaque jour","quotidien","commencer à","arrêter de"];
+  if (goalWords.some(w => lower.includes(w))) return "goals";
+
+  // ── Reminders: everything with "rappelle", "dans X heures", deadlines, etc. ──
+  const reminderWords = ["facture","payer","rappel","deadline","échéance","renouveler","rappelle","n'oublie","oublie pas","avant le","date limite","me rappeler","rappelle-moi","dans"];
+  const hasReminderWord = reminderWords.some(w => lower.includes(w));
+  if (hasReminderWord) return "reminders";
+
+  // ── Notes: everything else ──
+  return "notes";
 }
 
 // ── Add Item ──
@@ -346,21 +334,30 @@ function addItem(text, forceAgent) {
 }
 
 // ── Calendar Integration ──
+function downloadICS(icsContent, filename) {
+  const dataUri = "data:text/calendar;charset=utf-8," + encodeURIComponent(icsContent);
+  const link = document.createElement("a");
+  link.href = dataUri;
+  link.download = filename;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  try { link.click(); } catch(e) { window.open(dataUri, "_blank"); }
+  setTimeout(() => document.body.removeChild(link), 1000);
+}
+
+function fmtICS(d) {
+  return d.getFullYear() +
+    String(d.getMonth()+1).padStart(2,"0") +
+    String(d.getDate()).padStart(2,"0") + "T" +
+    String(d.getHours()).padStart(2,"0") +
+    String(d.getMinutes()).padStart(2,"0") +
+    String(d.getSeconds()).padStart(2,"0");
+}
+
 function openCalendar(title, date, time) {
   const [h, m] = time.split(":").map(Number);
   const start = new Date(date + "T" + String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":00");
   const end = new Date(start.getTime() + 60 * 60 * 1000);
-
-  const fmt = (d) => {
-    return d.getFullYear() +
-      String(d.getMonth()+1).padStart(2,"0") +
-      String(d.getDate()).padStart(2,"0") + "T" +
-      String(d.getHours()).padStart(2,"0") +
-      String(d.getMinutes()).padStart(2,"0") +
-      String(d.getSeconds()).padStart(2,"0");
-  };
-
-  // Clean title for ICS (remove special chars that break ICS format)
   const cleanTitle = title.replace(/[\\;,]/g, ' ');
 
   const ics = [
@@ -371,8 +368,8 @@ function openCalendar(title, date, time) {
     "PRODID:-//Agent de Vie//FR",
     "BEGIN:VEVENT",
     "UID:" + Date.now() + "@agentdevie",
-    "DTSTART:" + fmt(start),
-    "DTEND:" + fmt(end),
+    "DTSTART:" + fmtICS(start),
+    "DTEND:" + fmtICS(end),
     "SUMMARY:" + cleanTitle,
     "DESCRIPTION:Ajoute via Agent de Vie",
     "BEGIN:VALARM",
@@ -394,26 +391,42 @@ function openCalendar(title, date, time) {
     "END:VCALENDAR"
   ].join("\r\n");
 
-  // Method 1: Try direct data URI (works on most Safari versions)
-  const dataUri = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-  
-  // Create a hidden link and click it
-  const link = document.createElement("a");
-  link.href = dataUri;
-  link.download = "agent-de-vie-rdv.ics";
-  link.style.display = "none";
-  document.body.appendChild(link);
-  
-  // For iOS Safari, we need to use window.open as fallback
-  try {
-    link.click();
-  } catch(e) {
-    window.open(dataUri, "_blank");
-  }
-  
-  setTimeout(() => document.body.removeChild(link), 1000);
-  
+  downloadICS(ics, "agent-de-vie-rdv.ics");
   showToast("📲 Ouvre le fichier pour ajouter au calendrier", "#E8A838");
+}
+
+function openReminder(title, date, time) {
+  const [h, m] = time.split(":").map(Number);
+  const due = new Date(date + "T" + String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":00");
+  const cleanTitle = title.replace(/[\\;,]/g, ' ');
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "PRODID:-//Agent de Vie//FR",
+    "BEGIN:VTODO",
+    "UID:" + Date.now() + "@agentdevie-reminder",
+    "SUMMARY:" + cleanTitle,
+    "DUE:" + fmtICS(due),
+    "STATUS:NEEDS-ACTION",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT20M",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Dans 20min",
+    "END:VALARM",
+    "BEGIN:VALARM",
+    "TRIGGER:PT0S",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Maintenant",
+    "END:VALARM",
+    "END:VTODO",
+    "END:VCALENDAR"
+  ].join("\r\n");
+
+  downloadICS(ics, "agent-de-vie-rappel.ics");
+  showToast("📲 Ouvre le fichier pour ajouter aux rappels", "#E85D75");
 }
 
 function deleteItem(id) { items = items.filter(i=>i.id!==id); saveItems(); render(); }
@@ -478,56 +491,6 @@ function playAlertSound() {
     const beep = (freq,start,dur) => { const o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=freq; o.type="sine"; g.gain.setValueAtTime(0.3,start); g.gain.exponentialRampToValueAtTime(0.01,start+dur); o.start(start); o.stop(start+dur); };
     beep(660,ctx.currentTime,0.15); beep(880,ctx.currentTime+0.2,0.15); beep(1100,ctx.currentTime+0.4,0.25);
   } catch(e) {}
-}
-
-// ── Voice Recognition ──
-function isPWA() {
-  return window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
-}
-
-function startVoice() {
-  // If in PWA mode on iOS, open Safari for voice support
-  if (isPWA()) {
-    const url = window.location.href;
-    // Open in Safari by using a trick: window.open won't work in PWA, so we use a link
-    const safariUrl = url.includes("?") ? url + "&voice=1" : url + "?voice=1";
-    window.location.href = safariUrl;
-    return;
-  }
-
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { alert("La reconnaissance vocale n'est pas supportée. Utilise Chrome ou Safari."); return; }
-  if (isListening && recognition) { recognition.stop(); return; }
-  recognition = new SR();
-  recognition.lang = "fr-FR";
-  recognition.continuous = false;
-  recognition.interimResults = false;
-  recognition.onstart = () => { isListening=true; updateMicUI(); };
-  recognition.onresult = (e) => {
-    const text = e.results[0][0].transcript;
-    document.getElementById("text-input").value = text;
-    addItem(text);
-    document.getElementById("text-input").value = "";
-  };
-  recognition.onerror = () => { isListening=false; updateMicUI(); };
-  recognition.onend = () => { isListening=false; updateMicUI(); };
-  recognition.start();
-}
-function updateMicUI() {
-  const btn = document.getElementById("mic-btn");
-  const label = document.getElementById("listening-label");
-  const svg = btn.querySelector("svg");
-  if (isListening) {
-    btn.classList.add("listening");
-    svg.querySelector("path").setAttribute("stroke","#fff");
-    svg.querySelectorAll("line").forEach(l=>l.setAttribute("stroke","#fff"));
-    label.classList.remove("hidden");
-  } else {
-    btn.classList.remove("listening");
-    svg.querySelector("path").setAttribute("stroke","#aaa");
-    svg.querySelectorAll("line").forEach(l=>l.setAttribute("stroke","#aaa"));
-    label.classList.add("hidden");
-  }
 }
 
 // ── Escape HTML ──
@@ -621,7 +584,9 @@ function renderItemCard(item) {
   const agent = AGENTS.find(a=>a.id===item.agent);
   const past = isPast(item.date)&&!item.done;
   const dateLabel = isToday(item.date)?"Aujourd'hui":isTomorrow(item.date)?"Demain":formatDateFR(item.date);
-  const showCalBtn = !item.done && item.time && (item.agent==="calendar"||item.agent==="reminders");
+  const showCalBtn = !item.done && item.time && item.agent==="calendar";
+  const showReminderBtn = !item.done && item.time && item.agent==="reminders";
+  const escapedText = esc(item.text).replace(/'/g,"\\'");
   return `<div class="item-card" style="background:${item.done?'rgba(255,255,255,0.03)':past?'rgba(232,93,117,0.08)':'rgba(255,255,255,0.06)'};border-left:3px solid ${item.done?'rgba(255,255,255,0.1)':agent.color};opacity:${item.done?0.5:1}">
     <button class="check" style="background:${item.done?agent.color:'transparent'};border:${item.done?'none':`2px solid ${agent.color}40`}" onclick="toggleItem('${item.id}')">${item.done?'✓':''}</button>
     <div style="flex:1;min-width:0">
@@ -631,7 +596,8 @@ function renderItemCard(item) {
         ${item.time?`<span class="time" style="color:${agent.color}">${item.time}</span>`:''}
         ${past&&!item.done?'<span class="overdue-tag">EN RETARD</span>':''}
       </div>
-      ${showCalBtn?`<button onclick="openCalendar('${esc(item.text).replace(/'/g,"\\'")}','${item.date}','${item.time}')" style="margin-top:8px;padding:6px 14px;border-radius:10px;border:1px solid rgba(232,168,56,0.3);background:rgba(232,168,56,0.1);color:#E8A838;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s">📲 Ajouter au calendrier iPhone</button>`:''}
+      ${showCalBtn?`<button onclick="openCalendar('${escapedText}','${item.date}','${item.time}')" style="margin-top:8px;padding:6px 14px;border-radius:10px;border:1px solid rgba(232,168,56,0.3);background:rgba(232,168,56,0.1);color:#E8A838;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s">📲 Ajouter au calendrier iPhone</button>`:''}
+      ${showReminderBtn?`<button onclick="openReminder('${escapedText}','${item.date}','${item.time}')" style="margin-top:8px;padding:6px 14px;border-radius:10px;border:1px solid rgba(232,93,117,0.3);background:rgba(232,93,117,0.1);color:#E85D75;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s">🔔 Ajouter aux rappels iPhone</button>`:''}
     </div>
     <button class="delete" onclick="deleteItem('${item.id}')">×</button>
   </div>`;
@@ -842,7 +808,6 @@ async function registerServiceWorker() {
 }
 
 // ── Events ──
-document.getElementById("mic-btn").addEventListener("click", startVoice);
 document.getElementById("send-btn").addEventListener("click", () => {
   const input = document.getElementById("text-input");
   if (input.value.trim()) { addItem(input.value); input.value=""; }
@@ -860,32 +825,6 @@ setInterval(checkAlerts, 60000);
 setInterval(checkNotifications, 60000);
 checkAlerts();
 checkNotifications();
-
-// Auto-start voice if opened from PWA with ?voice=1
-if (window.location.search.includes("voice=1")) {
-  // Clean the URL
-  history.replaceState(null, "", window.location.pathname);
-  // Small delay to let the page load, then start voice
-  setTimeout(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SR) {
-      recognition = new SR();
-      recognition.lang = "fr-FR";
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.onstart = () => { isListening=true; updateMicUI(); };
-      recognition.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        document.getElementById("text-input").value = text;
-        addItem(text);
-        document.getElementById("text-input").value = "";
-      };
-      recognition.onerror = () => { isListening=false; updateMicUI(); };
-      recognition.onend = () => { isListening=false; updateMicUI(); };
-      recognition.start();
-    }
-  }, 500);
-}
 </script>
 
 </body>
