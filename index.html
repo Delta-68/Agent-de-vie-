@@ -308,14 +308,24 @@ function detectAgent(text) {
 // ── Extract shopping items from text ──
 function extractShoppingItems(text) {
   const lower = text.toLowerCase();
-  // Look for pattern: "acheter [items]" or "prendre [items]"
-  const m = lower.match(/(?:acheter|prendre|achet[ée])\s+(.+?)(?:\s+(?:dans|avant|demain|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|cet|ce\s)|\s*$)/i);
+  // Find everything after "acheter" or "prendre" and before time expressions
+  const m = lower.match(/\b(?:acheter|prendre|acheté)\s+(.+?)(?:\s+(?:dans\s+|avant\s+|demain|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|cet\s|ce\s+(?:soir|matin))|\s*$)/);
   if (!m) return [];
-  const raw = m[1];
-  const parts = raw.split(/\s*(?:,|et)\s*/i)
+  const raw = m[1]
+    .replace(/^(que\s+|de\s+|d'|qu'il\s+faut\s+|qu'on\s+|je\s+dois\s+)/i, ""); // clean prefix
+  const parts = raw.split(/\s*(?:,|\bet\b)\s*/)
     .map(p => p.trim().replace(/^(du |de la |des |de l'|le |la |les |l')/i,"").trim())
     .filter(p => p.length > 1);
   return parts;
+}
+
+// ── Clean text for shopping list display ──
+function cleanShoppingText(text) {
+  return text.trim()
+    // Only remove complete words at the start
+    .replace(/^(acheter|prendre|il me faut|il faut|j'ai besoin de|liste de courses?)\s+/i, "")
+    .replace(/^(du |de la |des |de l'|le |la |les |l')/i, "")
+    .trim();
 }
 
 // ── Add Item ──
@@ -325,8 +335,9 @@ function addItem(text, forceAgent) {
   const lower = text.toLowerCase();
 
   // ── DUAL ACTION: "rappelle-moi d'acheter X dans Y" → Reminder + Shopping ──
-  const isReminderAboutShopping = /rappell?e|dans\s+[\wé]+\s*(heures?|min)|n'oublie|oublie pas/.test(lower) 
-    && /acheter|prendre|achet/.test(lower);
+  const hasRemindContext = /rappell?e|n'oublie|oublie pas/.test(lower) || /\bdans\s+[\wé]+\s*(heures?|min)/.test(lower);
+  const hasBuyWord = /\bacheter\b|\bprendre\b/.test(lower);
+  const isReminderAboutShopping = hasRemindContext && hasBuyWord;
   
   if (isReminderAboutShopping) {
     // 1. Add to Reminders with time
@@ -352,12 +363,11 @@ function addItem(text, forceAgent) {
 
   // ── SHOPPING: direct shopping list ──
   if (agent === "shopping") {
-    const cleaned = text.trim()
-      .replace(/^(acheter|prendre|il me faut|il faut|j'ai besoin de|liste de courses?)\s*:?\s*/i,"")
-      .replace(/^(du |de la |des |de l'|le |la |les |l')/i,"");
-    const parts = cleaned.split(/\s*(?:,|et)\s*/i)
-      .map(p=>p.trim().replace(/^(du |de la |des |de l'|le |la |les |l')/i,"").trim())
-      .filter(p=>p.length>0);
+    const cleaned = cleanShoppingText(text);
+    const parts = cleaned.split(/\s*(?:,|\bet\b)\s*/)
+      .map(p => p.trim().replace(/^(du |de la |des |de l'|le |la |les |l')/i,"").trim())
+      .filter(p => p.length > 1);
+    if (parts.length === 0) parts.push(cleaned); // fallback: keep whole text
     parts.forEach((part,idx) => {
       items.unshift({ id: Date.now().toString()+Math.random().toString(36).substr(2,5)+idx, text: part.charAt(0).toUpperCase()+part.slice(1), agent:"shopping", date:todayStr(), time:null, done:false, created:new Date().toISOString() });
     });
